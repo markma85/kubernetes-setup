@@ -16,7 +16,7 @@ My Environment:
 * Set up static IP address
 
 ## Install Docker
-[Docker Installation Guide](https://docs.docker.com/engine/install/ubuntu/)
+[[Docker Installation Guide]](https://docs.docker.com/engine/install/ubuntu/)
 1. Uninstall old versions
 ```shell
 for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
@@ -47,7 +47,7 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 sudo systemctl status docker
 ```
 ## Install CRI-Docker
-[CRI-Docker Installation](https://github.com/Mirantis/cri-dockerd/releases)
+[[CRI-Docker Installation]](https://github.com/Mirantis/cri-dockerd/releases)
 
 ```shell
 # Download dpkg file from latest release
@@ -58,7 +58,7 @@ sudo dpkg -i cri-dockerd_0.3.15.3-0.ubuntu-jammy_amd64.deb
 sudo systemctl enable cri-docker
 ```
 ## Install Kubernetes
-[Kubernetes Installation Guide](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
+[[Kubernetes Installation Guide]](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
 
 Disable swap
 ```shell
@@ -139,7 +139,80 @@ On worker nodes
 sudo kubeadm join {control_plane_ip}:6443 --token {token} --cri-socket unix:///var/run/cri-dockerd.sock --discovery-token-ca-cert-hash sha256:{hash}
 ```
 
-## Cluster Monitoring
-Kube-Prometheus
+## Install Helm
+[[Helm Installation Guide]](https://helm.sh/docs/intro/quickstart/)
+### Binary package install
+```shell
+# Can use this command to check which release applies to you
+dpkg --print-architecture
+# Download your desired release package
+wget https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz
+tar -zxvf helm-v3.16.2-linux-amd64.tar.gz
+mv linux-amd64/helm /usr/local/bin/helm
+# Verify Helm
+helm help
+```
+### Script install
+```shell
+# Alternative you can install from Script
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+```
+### Package manager install
+```shell
+# Ubuntu install
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+```
 
-## Reverse Proxy
+## Deploy Traefik
+Trafik plays a role as Kubernetes Ingress controller, for reverse proxy.
+
+Deploying Traefik suggested to use Helm Chart. [[Installation Guide]](https://doc.traefik.io/traefik/getting-started/install-traefik/#use-the-helm-chart) [[GitHub Repo]](https://github.com/traefik/traefik-helm-chart)
+```shell
+wget https://raw.githubusercontent.com/traefik/traefik-helm-chart/refs/heads/master/traefik/values.yaml
+```
+Update content
+```yaml
+ingressRoute:
+  dashboard:
+    enabled: true
+  entryPoints: ["web"]
+providers:
+  kubernetesCRD:
+    allowCrossNamespace: true
+```
+```shell
+# Install the Traefik chart helm repo
+helm repo add traefik https://traefik.github.io/charts
+# Update repository
+helm repo update
+# Install the Traefik chart using configuration file
+helm install traefik --values values.yaml traefik/traefik
+```
+
+## Deploy Cluster Monitoring
+* Kube-Prometheus-Stack
+[GitHub Repo](https://github.com/prometheus-operator/kube-prometheus/)
+```shell
+# Create namespace
+kubectl create namespace monitor
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack --namespace monitor
+```
+Grafana default credentials
+> username: admin
+> password: prom-operator
+
+* Kube-State-Metrics (KSM)
+[GitHub Repo](https://github.com/kubernetes/kube-state-metrics/)
+```shell
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install [RELEASE_NAME] prometheus-community/kube-state-metrics
+```
