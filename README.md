@@ -106,7 +106,7 @@ Install socat
 sudo apt-get install socat -y
 ```
 ## Cluster init
-On control panel (master node)
+On control panel (`master` node)
 ### Init with Calico CIDR
 ```shell
 # Calico network
@@ -131,7 +131,7 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 export KUBECONFIG=/etc/kubernetes/admin.conf
 ```
 
-On worker nodes
+On `worker` nodes
 ```shell
 # Copy your join command and keep it safe.
 # Below is a sample format
@@ -205,7 +205,8 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack --namespace monitor
 ```
-Grafana default credentials
+> [!TIP]
+> Grafana default credentials
 > username: admin
 > password: prom-operator
 
